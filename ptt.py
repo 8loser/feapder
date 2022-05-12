@@ -4,15 +4,17 @@ import feapder
 class SpiderTest(feapder.AirSpider):
 
     def start_requests(self):
-        for i in range(1, 2):
-            yield feapder.Request(
-                "https://www.ptt.cc/bbs/Gossiping/index{}.html".format(i))
+        yield feapder.Request("https://www.ptt.cc/bbs/Gossiping/index.html")
+        # for i in range(1, 2):
+        # yield feapder.Request(
+        #     "https://www.ptt.cc/bbs/Gossiping/index{}.html".format(i))
 
     def download_midware(self, request):
         request.headers = {"Cookie": "over18=1"}
         return request
 
     def parse(self, request, response):
+        response.open()
         article_list = response.xpath('//div[@class="title"]')
         for article in article_list:
             title = article.xpath("./a/text()").extract_first()
