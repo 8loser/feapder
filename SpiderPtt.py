@@ -1,6 +1,9 @@
+from datetime import datetime
 import feapder
 # from feapder.db.mongodb import MongoDB
 from feapder import Item
+
+from ItemPost import ItemPost
 
 
 class SpiderPtt(feapder.AirSpider):
@@ -14,8 +17,12 @@ class SpiderPtt(feapder.AirSpider):
     )
 
     def start_requests(self):
-        yield feapder.Request("https://www.ptt.cc/bbs/Gossiping/index.html",
-                              callback=self.parse_post)
+        yield feapder.Request(
+            "https://www.ptt.cc/bbs/Gossiping/index39308.html",
+            callback=self.parse_post)
+        # yield feapder.Request("https://www.ptt.cc/bbs/Gossiping/index.html",
+        #                       callback=self.parse_post)
+
         # for i in range(1, 2):
         # yield feapder.Request(
         #     "https://www.ptt.cc/bbs/Gossiping/index{}.html".format(i))
@@ -32,23 +39,43 @@ class SpiderPtt(feapder.AirSpider):
         for post in post_list:
             title_div = post.xpath('./div[@class="title"]')
             title = title_div.xpath('./a/text()').extract_first()
+            # 文章被刪除會找不到 title
+            if (title is None):
+                continue
+
             url = title_div.xpath('./a/@href').extract_first()
             meta_div = post.xpath('./div[@class="meta"]')
             author = meta_div.xpath(
                 './div[@class="author"]/text()').extract_first()
             mark = meta_div.xpath(
                 './div[@class="mark"]/text()').extract_first()
-            item = Item()
-            item.table_name = "post"
-            item.title = title
-            item.url = url
-            item.author = author
-            if (mark is not None):
-                item.mark = mark
-            yield item
+            # 取得網址後繼續解析post詳細資料
+            yield feapder.Request(url,
+                                  callback=self.parse_post_detail,
+                                  title=title,
+                                  author=author,
+                                  mark=mark)
 
-        # yield feapder.Request(url, callback=self.parse_detail,
-        #                       title=title)  # callback 为回调函数
+    def parse_post_detail(self, request, response):
+        # 產生 post 資料
+        board = response.xpath('//a[@class="board"]/text()[1]').extract_first()
+        title = request.title
+        url = request.url
+        author = request.author
+        mark = request.mark
+        post_time_str = response.xpath(
+            "//div[@class='article-metaline'][3]/span[@class='article-meta-value'][1]/text()[1]"
+        ).extract_first()
+        post_time = datetime.strptime(post_time_str, '%a %b %d %H:%M:%S %Y')
+
+        item = ItemPost()
+        item.board = board
+        item.title = title
+        item.url = url
+        item.author = author
+        item.mark = mark
+        item.post_time = post_time
+        yield item
 
     def parse_detail(self, request, response):
         """
