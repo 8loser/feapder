@@ -39,7 +39,7 @@ class SpiderPtt(feapder.AirSpider):
         for post in post_list:
             title_div = post.xpath('./div[@class="title"]')
             title = title_div.xpath('./a/text()').extract_first()
-            # 文章被刪除會找不到 title
+            # 文章被刪除會找不到 title，忽略繼續下一筆
             if (title is None):
                 continue
 

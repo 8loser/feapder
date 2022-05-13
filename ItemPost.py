@@ -2,10 +2,12 @@ import datetime
 import string
 from feapder import Item
 
+import pytz
+
 
 class ItemPost(Item):
-
-    # __unique_key__ = ["title", "url"]
+    __unique_key__ = ["url"]
+    tw = pytz.timezone('Asia/Taipei')
 
     def __init__(self, *args, **kwargs):
         self.table_name = "Post"
@@ -17,7 +19,8 @@ class ItemPost(Item):
         self.post_time = datetime.datetime
 
     def pre_to_db(self):
-        """
-        入库前的处理
-        """
         self.title = self.title.strip()
+        self.url = self.url.strip()
+        self.author = self.author.strip()
+        self.mark = self.mark.strip() if self.mark else self.mark
+        self.post_time = self.tw.localize(self.post_time)
